@@ -40,6 +40,8 @@ public:
     void brake(double decrement) override;
     bool hasFuel() const override;
     double getSpeed() const { return speed; }
+    int getWheels() const { return wheels; }
+    double getFuelLevel() const { return currentFuel; }
 };
 
 // Water transport
@@ -53,6 +55,8 @@ public:
     void move(double distance) override;
     void info() const override;
     bool hasFuel() const override;
+	string getPropulsion() const { return propulsion; }
+    double getFuelLevel() const { return currentFuel; }
 };
 
 // Air transport
@@ -66,6 +70,8 @@ public:
     void move(double distance) override;
     void info() const override;
     bool hasFuel() const override;
+    double getAltitude() const { return altitude; }
+    double getFuelLevel() const { return currentFuel; }
 };
 
 
@@ -79,6 +85,8 @@ public:
     void info() const override;
     double getFuelLevel() const;
     double getSpeed() const;
+	string getFuelType() const { return fuelType; }
+	double getFuelConsumptionRate() const { return fuelConsumptionRate; }
 };
 
 // Train
@@ -91,6 +99,8 @@ public:
     void info() const override;
     double getFuelLevel() const;
     double getSpeed() const;
+	int getCarriages() const { return carriages; }
+	double getFuelConsumptionRate() const { return fuelConsumptionRate; }
 };
 
 // Yacht
@@ -103,6 +113,9 @@ public:
     void info() const override;
     double getFuelLevel() const;
     double getSpeed() const;
+	string getPropulsion() const { return propulsion; }
+	int getCabins() const { return cabins; }
+	double getFuelConsumptionRate() const { return fuelConsumptionRate; }
 };
 
 // Helicopter
@@ -115,4 +128,6 @@ public:
     void info() const override;
     double getFuelLevel() const;
     double getSpeed() const;
+	int getPassengers() const { return passengers; }
+    double getFuelConsumptionRate() const { return fuelConsumptionRate; }
 };
