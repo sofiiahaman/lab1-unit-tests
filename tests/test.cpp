@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Graph.h"
 #include "Transport.h"
+#include "Environment.h"
 
 
 TEST(GraphTest, AddAndRemoveVerticesAndEdges) {
@@ -356,4 +357,135 @@ TEST(HelicopterTest, MoveStopsWhenFuelInsufficient) {
     h.move(10);
     EXPECT_GT(h.getPosition(), startPos);
     EXPECT_NEAR(h.getFuelLevel(), 0, 1e-6);
+}
+
+TEST(PointTest, ConstructorAndGettersWorkCorrectly) {
+    Point p("Kyiv", 50.45, 30.52);
+    EXPECT_EQ(p.getName(), "Kyiv");
+    EXPECT_DOUBLE_EQ(p.getX(), 50.45);
+    EXPECT_DOUBLE_EQ(p.getY(), 30.52);
+    EXPECT_EQ(p.getInfo(), "Point: Kyiv");
+}
+
+TEST(ObstacleTest, ConstructorAndGettersWorkCorrectly) {
+    Obstacle o("Mountain", 10.0, 20.0);
+    EXPECT_EQ(o.getDescription(), "Mountain");
+    EXPECT_DOUBLE_EQ(o.getX(), 10.0);
+    EXPECT_DOUBLE_EQ(o.getY(), 20.0);
+    EXPECT_EQ(o.getInfo(), "Obstacle: Mountain");
+}
+
+TEST(RouteTest, ConstructorAndGettersWorkCorrectly) {
+    Point a("A", 0, 0);
+    Point b("B", 10, 10);
+    Route r(a, b, 15.5);
+
+    EXPECT_DOUBLE_EQ(r.getDistance(), 15.5);
+    EXPECT_EQ(r.getStart().getName(), "A");
+    EXPECT_EQ(r.getDestination().getName(), "B");
+}
+
+TEST(RouteTest, ShowRouteOutputsCorrectText) {
+    Point a("Start", 0, 0);
+    Point b("End", 10, 10);
+    Route r(a, b, 20.0);
+
+    std::ostringstream oss;
+    std::streambuf* oldCout = std::cout.rdbuf(oss.rdbuf());
+
+    r.showRoute();
+
+    std::cout.rdbuf(oldCout);
+    std::string output = oss.str();
+    EXPECT_NE(output.find("Route from Start to End (20"), std::string::npos);
+}
+
+TEST(EnvironmentTest, AddAndGetRoutesWorkCorrectly) {
+    Environment env;
+    Point a("A", 0, 0);
+    Point b("B", 10, 10);
+    Route r(a, b, 12.3);
+    env.addRoute(r);
+
+    const auto& routes = env.getRoutes();
+    ASSERT_EQ(routes.size(), 1);
+    EXPECT_EQ(routes[0].getStart().getName(), "A");
+    EXPECT_EQ(routes[0].getDestination().getName(), "B");
+}
+
+TEST(EnvironmentTest, AddAndGetObstaclesWorkCorrectly) {
+    Environment env;
+    Obstacle o("Storm", 5.0, 7.0);
+    env.addObstacle(o);
+
+    const auto& obstacles = env.getObstacles();
+    ASSERT_EQ(obstacles.size(), 1);
+    EXPECT_EQ(obstacles[0].getDescription(), "Storm");
+    EXPECT_DOUBLE_EQ(obstacles[0].getX(), 5.0);
+    EXPECT_DOUBLE_EQ(obstacles[0].getY(), 7.0);
+}
+
+TEST(EnvironmentTest, ShowEnvironmentOutputsRoutesAndObstacles) {
+    Environment env;
+    env.addRoute(Route(Point("A", 0, 0), Point("B", 1, 1), 10.0));
+    env.addObstacle(Obstacle("Hill", 2.0, 3.0));
+
+    std::ostringstream oss;
+    std::streambuf* oldCout = std::cout.rdbuf(oss.rdbuf());
+    env.showEnvironment();
+    std::cout.rdbuf(oldCout);
+
+    std::string output = oss.str();
+    EXPECT_NE(output.find("Environment overview"), std::string::npos);
+    EXPECT_NE(output.find("Route from A to B"), std::string::npos);
+    EXPECT_NE(output.find("Hill at"), std::string::npos);
+}
+
+class TestTransport : public Transport {
+public:
+    TestTransport(std::string name) : Transport(name, 100.0) {}
+    void move(double distance) override {}
+};
+
+TEST(EnvironmentTest, FindOptimalRouteReturnsCorrectPath) {
+    Graph<int> graph(false);
+
+    graph.add_edge(1, 2, 5);
+    graph.add_edge(2, 3, 3);
+    graph.add_edge(1, 3, 10);
+    graph.add_edge(3, 4, 2);
+
+    TestTransport car("TestCar");
+    Environment env;
+    std::vector<int> path = env.findOptimalRoute(graph, 1, 4, car);
+    std::vector<int> expected = { 1, 2, 3, 4 };
+    EXPECT_EQ(path, expected);
+    EXPECT_EQ(path.size(), 4);
+}
+
+TEST(EnvironmentTest, FindOptimalRouteNoPathExists) {
+    Graph<int> graph(false);
+    graph.add_edge(1, 2, 5);
+    graph.add_vertex(3);
+
+    TestTransport drone("Drone");
+    Environment env;
+
+    std::vector<int> path = env.findOptimalRoute(graph, 1, 3, drone);
+    EXPECT_TRUE(path.empty());
+}
+
+TEST(EnvironmentTest, MoveTransportPrintsCorrectOutput) {
+    Environment env;
+    TestTransport car("TestCar");
+    std::vector<int> route = { 1, 2, 3 };
+
+    std::stringstream buffer;
+    std::streambuf* oldCout = std::cout.rdbuf(buffer.rdbuf());
+    env.moveTransport(car, route);
+
+    std::cout.rdbuf(oldCout);
+    std::string output = buffer.str();
+    EXPECT_NE(output.find("TestCar moves along the route:"), std::string::npos);
+    EXPECT_NE(output.find("1 2 3"), std::string::npos);
 }
