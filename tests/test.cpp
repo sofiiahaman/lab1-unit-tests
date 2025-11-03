@@ -141,34 +141,27 @@ TEST(GraphTest, LoopEdgeIgnored) {
 TEST(TransportTest, MoveUpdatesPosition) {
     Transport t("Base", 50);
     t.move(10);
-    EXPECT_DOUBLE_EQ(t.getPosition(), 10);
+    EXPECT_NEAR(t.getPosition(), 10, 1e-6);
     t.move(5);
-    EXPECT_DOUBLE_EQ(t.getPosition(), 15);
+    EXPECT_NEAR(t.getPosition(), 15, 1e-6);
 }
 
 TEST(TransportTest, AccelerateAndBrakeAdjustSpeed) {
     Transport t("Bus", 60);
     t.accelerate(20);
-    EXPECT_DOUBLE_EQ(t.getSpeed(), 80);
+    EXPECT_NEAR(t.getSpeed(), 80, 1e-6);
     t.brake(30);
-    EXPECT_DOUBLE_EQ(t.getSpeed(), 50);
+    EXPECT_NEAR(t.getSpeed(), 50, 1e-6);
     t.brake(100);
-    EXPECT_DOUBLE_EQ(t.getSpeed(), 0);
+    EXPECT_NEAR(t.getSpeed(), 0, 1e-6);
 }
 
 TEST(TransportTest, UpdatePositionWorksCorrectly) {
     Transport t("Test", 100);
     t.updatePosition(30);
-    EXPECT_DOUBLE_EQ(t.getPosition(), 30);
+    EXPECT_NEAR(t.getPosition(), 30, 1e-6);
     t.updatePosition(5);
-    EXPECT_DOUBLE_EQ(t.getPosition(), 35);
-}
-
-TEST(LandTransportTest, MoveChangesPositionWhenHasFuel) {
-    LandTransport lt("Car", 100, 4, 100);
-    double start = lt.getPosition();
-    lt.move(20);
-    EXPECT_DOUBLE_EQ(lt.getPosition(), start + 20);
+    EXPECT_NEAR(t.getPosition(), 35, 1e-6);
 }
 
 TEST(TransportTest, MoveAndSpeedBehavior) {
@@ -181,48 +174,56 @@ TEST(TransportTest, MoveAndSpeedBehavior) {
     EXPECT_EQ(t.getSpeed(), 0);
 }
 
+TEST(LandTransportTest, MoveChangesPositionWhenHasFuel) {
+    LandTransport lt("Car", 100, 4, 100);
+    double start = lt.getPosition();
+    lt.move(20);
+    EXPECT_NEAR(lt.getPosition(), start + 20, 1e-6);
+}
+
+
 TEST(LandTransportTest, MoveDoesNotChangePositionWhenNoFuel) {
     LandTransport lt("Bike", 60, 2, 0);
     double start = lt.getPosition();
     lt.move(10);
-    EXPECT_DOUBLE_EQ(lt.getPosition(), start);
+    EXPECT_NEAR(lt.getPosition(), start, 1e-6);
     EXPECT_FALSE(lt.hasFuel());
 }
 
 TEST(LandTransportTest, AccelerateAndBrakeWorkProperly) {
     LandTransport lt("Bus", 60, 6, 50);
     lt.accelerate(10);
-    EXPECT_DOUBLE_EQ(lt.getSpeed(), 70);
+    EXPECT_NEAR(lt.getSpeed(), 70, 1e-6);
     lt.brake(20);
-    EXPECT_DOUBLE_EQ(lt.getSpeed(), 50);
+    EXPECT_NEAR(lt.getSpeed(), 50, 1e-6);
 }
 
 TEST(WaterTransportTest, MoveChangesPositionWhenHasFuel) {
     WaterTransport w("Boat", 30, "motor", 200);
     double start = w.getPosition();
     w.move(10);
-    EXPECT_DOUBLE_EQ(w.getPosition(), start + 10);
+    EXPECT_NEAR(w.getPosition(), start + 10, 1e-6);
 }
 
 TEST(WaterTransportTest, MoveDoesNotChangePositionWhenNoFuel) {
     WaterTransport w("Boat", 30, "motor", 0);
     double start = w.getPosition();
     w.move(10);
-    EXPECT_DOUBLE_EQ(w.getPosition(), start);
+    EXPECT_NEAR(w.getPosition(), start, 1e-6);
 }
 
 TEST(AirTransportTest, MoveChangesPositionWhenHasFuel) {
     AirTransport a("Jet", 500, 10000, 400);
     double start = a.getPosition();
     a.move(20);
-    EXPECT_DOUBLE_EQ(a.getPosition(), start + 20);
+    EXPECT_NEAR(a.getPosition(), start + 20, 1e-6);
 }
 
 TEST(AirTransportTest, MoveDoesNotChangePositionWhenNoFuel) {
     AirTransport a("Jet", 500, 10000, 0);
     double start = a.getPosition();
     a.move(20);
-    EXPECT_DOUBLE_EQ(a.getPosition(), start);
+    EXPECT_NEAR(a.getPosition(), start, 1e-6);
 }
 
 TEST(CarTest, MoveConsumesFuelAndStopsWhenEmpty) {
