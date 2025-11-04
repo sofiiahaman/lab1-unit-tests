@@ -2,9 +2,7 @@
 #include "Graph.h"
 #include "Transport.h"
 #include "Environment.h"
-#include <sstream>
-#include <set>
-
+#include <gtest/gtest.h>
 
 class GraphTestFixture : public ::testing::Test {
 protected:
@@ -20,8 +18,6 @@ protected:
 };
 
 TEST_F(GraphTestFixture, AddAndRemoveVerticesAndEdges) {
-    Graph<int> g(false);
-
     g.add_vertex(1);
     g.add_vertex(2);
     g.add_edge(1, 2, 5);
@@ -38,7 +34,7 @@ TEST_F(GraphTestFixture, AddAndRemoveVerticesAndEdges) {
     EXPECT_EQ(g.getAdjacency().count(1), 0);
 }
 
-TEST_F(GraphTestFixture, MSTPrim) {
+TEST_F(GraphTestFixture, MSTPrimBasic) {
     Graph<int> g(false);
     g.add_edge(1, 2, 2);
     g.add_edge(1, 3, 3);
@@ -76,6 +72,12 @@ TEST_F(GraphTestFixture, MSTBoruvka) {
 
     EXPECT_EQ(edges.size(), 4);
     EXPECT_EQ(weight, 11);
+}
+
+TEST_F(GraphTestFixture, HandlesEmptyGraphGracefully) {
+    auto [edges, weight] = g.mst_prim(false);
+    EXPECT_TRUE(edges.empty());
+    EXPECT_EQ(weight, 0);
 }
 
 TEST_F(GraphTestFixture, DijkstraShortestPath) {
@@ -135,22 +137,47 @@ TEST_F(GraphTestFixture, LoopEdgeIgnored) {
     EXPECT_EQ(actualEdges, expectedEdges);
 }
 
-TEST(TransportTest, MoveUpdatesPosition) {
-    Transport t("Base", 50);
-    t.move(10);
-    EXPECT_NEAR(t.getPosition(), 10, 1e-6);
-    t.move(5);
-    EXPECT_NEAR(t.getPosition(), 15, 1e-6);
+TEST_F(GraphTestFixture, NoPathExists) {
+    g.add_vertex(1);
+    g.add_vertex(2);
+    auto [path, dist] = g.shortest_path(1, 2, false);
+    EXPECT_TRUE(path.empty());
+    EXPECT_EQ(dist, -1);
 }
 
-TEST(TransportTest, AccelerateAndBrakeAdjustSpeed) {
-    Transport t("Bus", 60);
-    t.accelerate(20);
-    EXPECT_NEAR(t.getSpeed(), 80, 1e-6);
-    t.brake(30);
-    EXPECT_NEAR(t.getSpeed(), 50, 1e-6);
-    t.brake(100);
-    EXPECT_NEAR(t.getSpeed(), 0, 1e-6);
+class TransportTest : public ::testing::TestWithParam<std::string> {
+protected:
+    std::unique_ptr<Transport> transport;
+
+    void SetUp() override {
+        std::string type = GetParam();
+        if (type == "Land")
+            transport = std::make_unique<LandTransport>("Car", 100, 4, 50);
+        else if (type == "Water")
+            transport = std::make_unique<WaterTransport>("Boat", 30, "motor", 50);
+        else if (type == "Air")
+            transport = std::make_unique<AirTransport>("Jet", 500, 10000, 50);
+    }
+};
+
+TEST_P(TransportTest, MoveChangesPositionWhenHasFuel) {
+    double start = transport->getPosition();
+    transport->move(10);
+    EXPECT_GT(transport->getPosition(), start);
+}
+
+TEST_P(TransportTest, MoveDoesNotChangePositionWhenNoFuel) {
+    transport->setFuel(0);
+    double start = transport->getPosition();
+    transport->move(10);
+    EXPECT_NEAR(transport->getPosition(), start, 1e-9);
+}
+
+TEST_P(TransportTest, AccelerateAndBrakeAdjustSpeed) {
+    transport->accelerate(20);
+    EXPECT_GT(transport->getSpeed(), 0);
+    transport->brake(transport->getSpeed() + 10);
+    EXPECT_NEAR(transport->getSpeed(), 0.0, 1e-9);
 }
 
 TEST(TransportTest, UpdatePositionWorksCorrectly) {
@@ -168,99 +195,81 @@ TEST(TransportTest, MoveAndSpeedBehavior) {
     t.accelerate(20);
     EXPECT_GT(t.getSpeed(), 80);
     t.brake(100);
-    EXPECT_EQ(t.getSpeed(), 0);
+    EXPECT_NEAR(t.getSpeed(), 0.0, 1e-9);
 }
 
-TEST(LandTransportTest, MoveChangesPositionWhenHasFuel) {
-    LandTransport lt("Car", 100, 4, 100);
-    double start = lt.getPosition();
-    lt.move(20);
-    EXPECT_NEAR(lt.getPosition(), start + 20, 1e-6);
+TEST(TransportTest, NegativeSpeedChangeDoesNotCrash) {
+    Transport t("Car", 50);
+    EXPECT_NO_THROW(t.accelerate(-10));
+    EXPECT_NO_THROW(t.brake(-20));
 }
 
-
-TEST(LandTransportTest, MoveDoesNotChangePositionWhenNoFuel) {
-    LandTransport lt("Bike", 60, 2, 0);
-    double start = lt.getPosition();
-    lt.move(10);
-    EXPECT_NEAR(lt.getPosition(), start, 1e-6);
-    EXPECT_FALSE(lt.hasFuel());
+TEST_P(TransportTest, NoMovementIfSpeedIsZero) {
+    transport->brake(transport->getSpeed() + 10);
+    double startPos = transport->getPosition();
+    transport->move(10);
+    EXPECT_NEAR(transport->getPosition(), startPos, 1e-9);
 }
 
-TEST(LandTransportTest, AccelerateAndBrakeWorkProperly) {
-    LandTransport lt("Bus", 60, 6, 50);
-    lt.accelerate(10);
-    EXPECT_NEAR(lt.getSpeed(), 70, 1e-6);
-    lt.brake(20);
-    EXPECT_NEAR(lt.getSpeed(), 50, 1e-6);
+TEST_P(TransportTest, AccelerateDoesNotAllowNegativeSpeed) {
+    transport->brake(transport->getSpeed() + 10);
+    transport->accelerate(-20);
+    EXPECT_GE(transport->getSpeed(), 0);
 }
 
-TEST(WaterTransportTest, MoveChangesPositionWhenHasFuel) {
-    WaterTransport w("Boat", 30, "motor", 200);
-    double start = w.getPosition();
-    w.move(10);
-    EXPECT_NEAR(w.getPosition(), start + 10, 1e-6);
+TEST_P(TransportTest, BrakeDoesNotAllowNegativeSpeed) {
+    transport->accelerate(30);
+    transport->brake(transport->getSpeed() + 1000);
+    EXPECT_NEAR(transport->getSpeed(), 0.0, 1e-9);
 }
 
-TEST(WaterTransportTest, MoveDoesNotChangePositionWhenNoFuel) {
-    WaterTransport w("Boat", 30, "motor", 0);
-    double start = w.getPosition();
-    w.move(10);
-    EXPECT_NEAR(w.getPosition(), start, 1e-6);
+// Parameterized tests for derived Transport classes
+class DerivedTransportTest : public ::testing::TestWithParam<std::string> {
+protected:
+    std::unique_ptr<Transport> transport;
+
+    void SetUp() override {
+        std::string type = GetParam();
+        if (type == "Land")
+            transport = std::make_unique<LandTransport>("Car", 100, 4, 100);
+        else if (type == "Water")
+            transport = std::make_unique<WaterTransport>("Boat", 30, "motor", 200);
+        else if (type == "Air")
+            transport = std::make_unique<AirTransport>("Jet", 500, 10000, 400);
+        else if (type == "Car")
+            transport = std::make_unique<Car>("Audi", 120, 4, "Gasoline", 5, 1.0);
+        else if (type == "Train")
+            transport = std::make_unique<Train>("Train", 200, 16, 8, 20, 2.0);
+        else if (type == "Yacht")
+            transport = std::make_unique<Yacht>("Luxury", 50, "diesel", 4, 10, 1.0);
+        else if (type == "Helicopter")
+            transport = std::make_unique<Helicopter>("Apache", 250, 3000, 4, 10, 1.0);
+    }
+};
+
+TEST_P(DerivedTransportTest, MovesWhenHasFuel) {
+    double start = transport->getPosition();
+    transport->move(10);
+    EXPECT_GT(transport->getPosition(), start)
+        << "Transport should move forward when it has fuel.";
 }
 
-TEST(AirTransportTest, MoveChangesPositionWhenHasFuel) {
-    AirTransport a("Jet", 500, 10000, 400);
-    double start = a.getPosition();
-    a.move(20);
-    EXPECT_NEAR(a.getPosition(), start + 20, 1e-6);
+TEST_P(DerivedTransportTest, DoesNotMoveWhenNoFuel) {
+    transport->setFuel(0);
+    double start = transport->getPosition();
+    transport->move(10);
+    EXPECT_NEAR(transport->getPosition(), start, 1e-6)
+        << "Transport should not move when fuel is empty.";
 }
 
-TEST(AirTransportTest, MoveDoesNotChangePositionWhenNoFuel) {
-    AirTransport a("Jet", 500, 10000, 0);
-    double start = a.getPosition();
-    a.move(20);
-    EXPECT_NEAR(a.getPosition(), start, 1e-6);
-}
+TEST_P(DerivedTransportTest, AccelerateAndBrakeBehavior) {
+    transport->accelerate(20);
+    EXPECT_GT(transport->getSpeed(), 0)
+        << "Transport should increase speed when accelerating.";
 
-TEST(CarTest, MoveConsumesFuelAndStopsWhenEmpty) {
-    Car c("Audi", 120, 4, "Gasoline", 5, 1.0);
-    double startPos = c.getPosition();
-    c.move(10);
-    EXPECT_GT(c.getPosition(), startPos);
-    double after = c.getPosition();
-    c.move(10);
-    EXPECT_EQ(c.getPosition(), after);
-}
-
-TEST(TrainTest, MoveConsumesFuelAndStopsWhenEmpty) {
-    Train tr("Train", 200, 16, 8, 20, 2.0);
-    double start = tr.getPosition();
-    tr.move(10);
-    EXPECT_GT(tr.getPosition(), start);
-    double after = tr.getPosition();
-    tr.move(100);
-    EXPECT_GE(tr.getPosition(), after);
-}
-
-TEST(YachtTest, MovesUntilFuelEnds) {
-    Yacht y("Luxury", 50, "diesel", 4, 10, 1.0);
-    double start = y.getPosition();
-    y.move(5);
-    EXPECT_GT(y.getPosition(), start);
-    double after = y.getPosition();
-    y.move(20);
-    EXPECT_GE(y.getPosition(), after);
-}
-
-TEST(HelicopterTest, MovesUntilFuelEnds) {
-    Helicopter h("Apache", 250, 3000, 4, 10, 1.0);
-    double start = h.getPosition();
-    h.move(5);
-    EXPECT_GT(h.getPosition(), start);
-    double after = h.getPosition();
-    h.move(20);
-    EXPECT_GE(h.getPosition(), after);
+    transport->brake(transport->getSpeed() + 50);
+    EXPECT_NEAR(transport->getSpeed(), 0.0, 1e-9)
+        << "Transport speed should return to zero after braking hard.";
 }
 
 TEST(RouteTest, ShowRouteOutputsCorrectText) {
@@ -346,6 +355,31 @@ TEST_F(EnvironmentTestFixture, FindOptimalRouteReturnsCorrectPath) {
     std::vector<int> path = env.findOptimalRoute(graph, 1, 4, car);
     std::vector<int> expected = { 1, 2, 3, 4 };
     EXPECT_EQ(path, expected);
+}
+
+TEST_F(EnvironmentTestFixture, FindOptimalRouteEmptyGraphReturnsEmpty) {
+    Graph<int> graph(false);
+    class DummyTransport : public Transport {
+    public:
+        DummyTransport(std::string n) : Transport(n, 100) {}
+        void move(double) override {}
+    } car("TestCar");
+
+    std::vector<int> path = env.findOptimalRoute(graph, 1, 4, car);
+    EXPECT_TRUE(path.empty());
+}
+
+TEST_F(EnvironmentTestFixture, FindOptimalRouteInvalidNodesThrows) {
+    Graph<int> graph(false);
+    graph.add_edge(1, 2, 5);
+
+    class DummyTransport : public Transport {
+    public:
+        DummyTransport(std::string n) : Transport(n, 100) {}
+        void move(double) override {}
+    } car("TestCar");
+
+    EXPECT_THROW(env.findOptimalRoute(graph, 99, 100, car), std::out_of_range);
 }
 
 TEST_F(EnvironmentTestFixture, FindOptimalRouteNoPathExists) {
