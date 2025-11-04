@@ -65,6 +65,14 @@ const vector<Obstacle>& Environment::getObstacles() const {
     return obstacles;
 }
 
+void Environment::clearRoutes() {
+    routes.clear();
+}
+
+void Environment::clearObstacles() {
+    obstacles.clear();
+}
+
 vector<int> Environment::findOptimalRoute(Graph<int>& graph, int start, int end, Transport& transport) {
     cout << "\nFinding optimal route for " << transport.getName() << "...\n";
     auto [path, distance] = graph.shortest_path(start, end, true);

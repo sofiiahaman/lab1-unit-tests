@@ -62,6 +62,9 @@ public:
     const vector<Route>& getRoutes() const;
     const vector<Obstacle>& getObstacles() const;
 
+    void clearRoutes();
+    void clearObstacles();
+
     vector<int> findOptimalRoute(Graph<int>& graph, int start, int end, Transport& transport);
     void moveTransport(Transport& transport, const vector<int>& route);
 };

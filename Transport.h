@@ -24,6 +24,8 @@ public:
     void updatePosition(double distance);
     double getPosition() const { return position; }
     double getSpeed() const { return speed; }
+    virtual void setFuel(double) {}
+    virtual double getFuel() const { return 0.0; }
 };
 
 // Land transport
@@ -42,6 +44,7 @@ public:
     double getSpeed() const { return speed; }
     int getWheels() const { return wheels; }
     double getFuelLevel() const { return currentFuel; }
+    void setFuel(double amount) { currentFuel = std::max(0.0, std::min(amount, fuelCapacity)); }
 };
 
 // Water transport
@@ -57,6 +60,7 @@ public:
     bool hasFuel() const override;
 	string getPropulsion() const { return propulsion; }
     double getFuelLevel() const { return currentFuel; }
+    void setFuel(double amount) { currentFuel = std::max(0.0, std::min(amount, fuelCapacity)); }
 };
 
 // Air transport
@@ -72,6 +76,7 @@ public:
     bool hasFuel() const override;
     double getAltitude() const { return altitude; }
     double getFuelLevel() const { return currentFuel; }
+    void setFuel(double amount) { currentFuel = std::max(0.0, std::min(amount, fuelCapacity)); }
 };
 
 
@@ -87,6 +92,7 @@ public:
     double getSpeed() const;
 	string getFuelType() const { return fuelType; }
 	double getFuelConsumptionRate() const { return fuelConsumptionRate; }
+    void setFuel(double amount) { currentFuel = std::max(0.0, std::min(amount, fuelCapacity)); }
 };
 
 // Train
@@ -101,6 +107,7 @@ public:
     double getSpeed() const;
 	int getCarriages() const { return carriages; }
 	double getFuelConsumptionRate() const { return fuelConsumptionRate; }
+    void setFuel(double amount) { currentFuel = std::max(0.0, std::min(amount, fuelCapacity)); }
 };
 
 // Yacht
@@ -116,6 +123,7 @@ public:
 	string getPropulsion() const { return propulsion; }
 	int getCabins() const { return cabins; }
 	double getFuelConsumptionRate() const { return fuelConsumptionRate; }
+    void setFuel(double amount) { currentFuel = std::max(0.0, std::min(amount, fuelCapacity)); }
 };
 
 // Helicopter
@@ -130,4 +138,5 @@ public:
     double getSpeed() const;
 	int getPassengers() const { return passengers; }
     double getFuelConsumptionRate() const { return fuelConsumptionRate; }
+    void setFuel(double amount) { currentFuel = std::max(0.0, std::min(amount, fuelCapacity)); }
 };
