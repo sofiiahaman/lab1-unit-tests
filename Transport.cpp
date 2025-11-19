@@ -1,6 +1,18 @@
+/**
+ * @file Transport.cpp
+ * @author Sofiia Haman
+ * @date 18.11.2025
+ * @version 1.0
+ * @brief Implementation of transport classes including the base Transport class,
+ *        specialized land, water, and air transport types, and detailed movement
+ *        and fuel consumption logic for each transport category.
+ */
+
+
 #include "Transport.h"
 
-// Transport
+//==================== Base Transport ====================
+// Position starts at 0, representing the initial location.
 Transport::Transport(string n, double s) : name(n), speed(s), position(0) {}
 string Transport::getName() const { return name; }
 
@@ -28,7 +40,8 @@ void Transport::updatePosition(double distance) {
     position += distance;
 }
 
-// Land transport
+//==================== Land Transport ====================
+// Starts with a full fuel tank.
 LandTransport::LandTransport(string n, double s, int w, double fuelCap)
     : Transport(n, s), wheels(w), fuelCapacity(fuelCap), currentFuel(fuelCap) {
 }
@@ -59,7 +72,7 @@ void LandTransport::brake(double decrement) {
     Transport::brake(decrement);
 }
 
-// Water transport
+//==================== Water Transport ====================
 WaterTransport::WaterTransport(string n, double s, string p, double fuelCap)
     : Transport(n, s), propulsion(p), fuelCapacity(fuelCap), currentFuel(fuelCap) {
 }
@@ -82,7 +95,7 @@ void WaterTransport::info() const {
     cout << "Propulsion type: " << propulsion << ", Fuel: " << currentFuel << "/" << fuelCapacity << " liters" << endl;
 }
 
-// Air transport
+//==================== Air Transport ====================
 AirTransport::AirTransport(string n, double s, double a, double fuelCap)
     : Transport(n, s), altitude(a), fuelCapacity(fuelCap), currentFuel(fuelCap) {
 }
@@ -105,7 +118,7 @@ void AirTransport::info() const {
     cout << "Maximum flight altitude: " << altitude << " m, Fuel: " << currentFuel << "/" << fuelCapacity << " liters" << endl;
 }
 
-// Car
+//==================== Car ====================
 Car::Car(string n, double s, int w, string fuel, double fuelCap, double consumptionRate)
     : LandTransport(n, s, w, fuelCap), fuelType(fuel), fuelConsumptionRate(consumptionRate) {
 }
@@ -116,9 +129,11 @@ void Car::move(double distance) {
         return;
     }
     double fuelNeeded = distance * fuelConsumptionRate;
+
+    // If not enough fuel, reduce travel distance accordingly.
     if (fuelNeeded > currentFuel) {
         cout << name << " does not have enough fuel to move " << distance << " km." << endl;
-        distance = currentFuel / fuelConsumptionRate; // move as far as fuel allows
+        distance = currentFuel / fuelConsumptionRate;
         cout << name << " will move only " << distance << " km." << endl;
     }
     currentFuel -= distance * fuelConsumptionRate;
@@ -139,7 +154,7 @@ double Car::getSpeed() const {
     return speed;
 }
 
-// Train
+//==================== Train ====================
 Train::Train(string n, double s, int w, int c, double fuelCap, double consumptionRate)
     : LandTransport(n, s, w, fuelCap), carriages(c), fuelConsumptionRate(consumptionRate) {
 }
@@ -173,7 +188,7 @@ double Train::getSpeed() const {
     return speed;
 }
 
-// Yacht
+//==================== Yacht ====================
 Yacht::Yacht(string n, double s, string p, int c, double fuelCap, double consumptionRate)
     : WaterTransport(n, s, p, fuelCap), cabins(c), fuelConsumptionRate(consumptionRate) {
 }
@@ -207,7 +222,7 @@ double Yacht::getSpeed() const {
     return speed;
 }
 
-// Helicopter
+//==================== Helicopter ====================
 Helicopter::Helicopter(string n, double s, double a, int p, double fuelCap, double consumptionRate)
     : AirTransport(n, s, a, fuelCap), passengers(p), fuelConsumptionRate(consumptionRate) {
 }
