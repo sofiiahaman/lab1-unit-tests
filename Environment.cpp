@@ -1,3 +1,12 @@
+/**
+ * @file Environment.cpp
+ * @author Sofiia Haman
+ * @date 18.11.2025
+ * @version 1.0
+ * @brief Implementation of environment classes including Points, Obstacles, Routes,
+ *        and logic for route management and transport movement within the environment.
+ */
+
 #include "Environment.h"
 #include "Graph.h"
 #include "Transport.h"
@@ -7,17 +16,17 @@
 using namespace std;
 
 
-// Point (location)
+//==================== Point (location) ====================
 Point::Point(string n, double xCoord, double yCoord) : MapObject(xCoord, yCoord), name(n) {}
 string Point::getName() const { return name; }
 string Point::getInfo() const { return "Point: " + name; }
 
-// Obstacle
+//==================== Obstacle ====================
 Obstacle::Obstacle(string desc, double xCoord, double yCoord) : MapObject(xCoord, yCoord), description(desc) {}
 string Obstacle::getDescription() const { return description; }
 string Obstacle::getInfo() const { return "Obstacle: " + description; }
 
-// Route
+//==================== Route ====================
 Route::Route(Point s, Point d, double dist)
     : start(s), destination(d), distance(dist) {
 }
@@ -30,9 +39,7 @@ double Route::getDistance() const { return distance; }
 Point Route::getStart() const { return start; }
 Point Route::getDestination() const { return destination; }
 
-
-
-// Environment
+//==================== Environment ====================
 void Environment::addRoute(const Route& route) {
     routes.push_back(route);
 }
@@ -73,6 +80,7 @@ void Environment::clearObstacles() {
     obstacles.clear();
 }
 
+//==================== Routing & Movement ====================
 vector<int> Environment::findOptimalRoute(Graph<int>& graph, int start, int end, Transport& transport) {
     cout << "\nFinding optimal route for " << transport.getName() << "...\n";
     auto [path, distance] = graph.shortest_path(start, end, true);

@@ -64,3 +64,10 @@ Defines the geographical environment.
 - *showEnvironment()* - displays routes and obstacles
 - *findOptimalRoute(graph, start, end, transport)* - finds the best route using Dijkstra
 - *moveTransport(transport, route)* - simulates transport movement
+
+## Documentation
+- The documentation is automatically generated with Doxygen, providing descriptions of classes, methods, functions, usage examples, and exceptions.
+- The setup for the documentation is configured through the Doxyfile and the docs.yml workflow.
+- The following tags are used: `@brief`, `@param`, `@return`, `@throws`, `@example`, `@class`, `@code`, `@endcode`, `@details`, `@struct`, `@tparam`.
+- Any changes made in the `feature/docs-ci` branch are automatically reflected in the documentation: GitHub Actions updates the HTML version and publishes it on GitHub Pages.
+- The documentation is available at the following link: [Documentation](https://sofiiahaman.github.io/lab1-unit-tests/index.html)
